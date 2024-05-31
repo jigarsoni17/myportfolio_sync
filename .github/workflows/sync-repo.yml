@@ -1,0 +1,45 @@
+name: Sync Repositories
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'jigarsoni17'
+          git config --global user.email 'jigar.soni54@gmail.com'
+
+      - name: Clone target repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: |
+          git clone https://github.com/jigarsoni17/myportfolio_sync.git target-repo
+          cd target-repo
+          git checkout main
+
+      - name: Sync files except application.properties
+        run: |
+          rsync -av --exclude='style.css' --exclude='.git' --delete . target-repo/
+          cd target-repo
+          git add .
+          git status
+
+      - name: Commit and Push changes to repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd target-repo
+          git commit -m "Sync changes from myportfolio excluding style.css"
+          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/jigarsoni17/myportfolio_sync.git
+          git push origin main
